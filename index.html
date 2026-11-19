@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Digital Identity — votre empreinte numérique</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 10%22><circle cx=%225%22 cy=%225%22 r=%224%22 fill=%22%23e5172f%22/></svg>">
+<link rel="stylesheet" href="theme.css">
+<style>
+  .score{display:flex;align-items:center;gap:20px}
+  .ring{width:120px;height:120px;flex:none} .ring circle{fill:none;stroke-width:11}
+  #graph{width:100%;height:440px;cursor:grab}
+  .reco{display:flex;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-bottom:8px;font-size:13px}
+  .reco .d{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .lvl{width:8px;border-radius:4px;flex:none} .lvl.red{background:var(--red)} .lvl.warn{background:var(--warn)} .lvl.info{background:var(--info)}
+  .xp{height:6px;background:var(--bg2);border-radius:6px;overflow:hidden;width:110px} .xp i{display:block;height:100%}
+  .chips span{display:inline-block;font:11px var(--mono);padding:2px 7px;border-radius:6px;background:var(--bg2);border:1px solid var(--line2);margin:2px 3px 0 0;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:12px;color:var(--muted)} .legend i{width:10px;height:10px;border-radius:50%}
+  .form2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .checks label{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:13px;color:var(--text);margin:4px 0}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span>DIGITAL IDENTITY <small>cartographiez votre empreinte numérique</small></div>
+  <div class="spacer"></div><span class="badge ok">🔒 100 % local · rien n'est envoyé</span>
+</header>
+<main class="wrap">
+  <div class="grid" style="grid-template-columns:320px 1fr;gap:20px">
+    <aside class="col">
+      <div class="card score"><svg class="ring" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" stroke="#26262e"/><circle id="arc" cx="60" cy="60" r="50" stroke="#e5172f" stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round" transform="rotate(-90 60 60)" style="transition:stroke-dashoffset .8s"/><text id="gs" x="60" y="68" text-anchor="middle" fill="#ececf1" font-size="30" font-weight="800">–</text></svg>
+        <div><div class="kicker">Indice d'exposition</div><h2 id="level" style="margin:6px 0 2px">—</h2><div class="dim" style="font-size:12px">0 = invisible · 100 = très exposé</div></div></div>
+      <div class="card col">
+        <h3 style="margin:0">Ajouter vos données</h3>
+        <div class="drop" id="drop">⇪ Importer un CSV ou JSON<div class="dim" style="font-size:12px;margin-top:4px">export Chrome / Firefox / Bitwarden, ou fichier maison</div><input type="file" id="file" accept=".csv,.json" hidden></div>
+        <button class="btn" id="add">＋ Ajouter un compte</button>
+        <button class="btn ghost" id="demo">Charger un profil de démonstration</button>
+        <button class="btn ghost sm" id="clear">Tout effacer</button>
+        <div class="dim" style="font-size:11.5px;line-height:1.6">Les mots de passe importés ne sont <b>jamais stockés</b> : seule une empreinte SHA-256 tronquée sert à repérer les réutilisations, ainsi qu'une estimation de leur robustesse.</div>
+      </div>
+      <div class="card"><h3>Par catégorie</h3><canvas id="donut" style="width:100%;height:170px"></canvas></div>
+    </aside>
+    <section class="col" style="gap:20px">
+      <div class="grid g4"><div class="stat"><div class="l">Comptes</div><div class="v" id="nAcc">0</div></div><div class="stat"><div class="l">Adresses e-mail</div><div class="v" id="nMail">0</div></div>
+        <div class="stat"><div class="l">Pseudonymes</div><div class="v" id="nUser">0</div></div><div class="stat"><div class="l">Mots de passe réutilisés</div><div class="v red" id="nReuse">0</div></div></div>
+      <div class="card"><div class="card-h"><h3>Graphe d'identité : comment vos comptes se relient</h3>
+        <div class="legend"><span><i style="background:#ececf1"></i>vous</span><span><i style="background:#5aa9ff"></i>e-mail</span><span><i style="background:#c084fc"></i>pseudo</span><span><i style="background:#f5a524"></i>téléphone</span><span><i style="background:#e5172f"></i>compte (taille = exposition)</span></div></div>
+        <canvas id="graph"></canvas></div>
+      <div class="grid g2">
+        <div class="card"><div class="card-h"><h3>Recommandations</h3><span class="badge" id="nReco">0</span></div><div id="recos" style="max-height:420px;overflow:auto"></div></div>
+        <div class="card"><h3>Comptes les plus exposés</h3><table class="t" id="tbl"></table></div>
+      </div>
+    </section>
+  </div>
+</main>
+<div class="modal-bg" id="addModal"><div class="card modal"><h2>Nouveau compte</h2>
+  <div class="form2"><div><label>Service</label><input class="input" id="fName" placeholder="Instagram"></div><div><label>Pseudo</label><input class="input" id="fUser"></div>
+    <div><label>E-mail utilisé</label><input class="input" id="fMail"></div><div><label>Téléphone lié</label><input class="input" id="fPhone"></div>
+    <div><label>Dernière utilisation</label><input class="input" type="date" id="fLast"></div><div><label>Mot de passe (analysé, non stocké)</label><input class="input" type="password" id="fPw"></div></div>
+  <div class="checks grid g2" style="margin-top:10px"><label><input type="checkbox" id="fPublic"> Profil public</label><label><input type="checkbox" id="fReal"> Vrai nom affiché</label>
+    <label><input type="checkbox" id="fPhoto"> Photo de vous</label><label><input type="checkbox" id="fLoc"> Localisation partagée</label><label><input type="checkbox" id="f2fa"> Double authentification</label></div>
+  <div class="row" style="margin-top:14px"><button class="btn" id="save">Ajouter</button><button class="btn ghost" onclick="modal('addModal',false)">Annuler</button></div></div></div>
+<script src="ui.js"></script><script src="charts.js"></script><script src="identity.js"></script><script src="app.js"></script>
+</body>
+</html>
